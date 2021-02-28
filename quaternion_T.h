@@ -9,8 +9,8 @@
 #define quaternion_T_h
 
 #include <cmath>
-#include "vector3d_T.h"
-#include "matrix3d_T.h"
+#include "vector_3dT.h"
+#include "matrix_3dT.h"
 
 template <typename T> class quaternion;
 template <typename T> using quat = class quaternion<T>;
@@ -22,44 +22,48 @@ public:
  quaternion(T w_=T(), T x_=T(), T y_=T(), T z_=T())
  : w(w_), x(x_), y(y_), z(z_) { }
 
- static quaternion i();
- static quaternion j();
- static quaternion k();
+ static quaternion i() { return quaternion(0.0, 1.0, 0.0, 0.0); };
+ static quaternion j() { return quaternion(0.0, 0.0, 1.0, 0.0); };
+ static quaternion k() { return quaternion(0.0, 0.0, 0.0, 1.0); };
 
- static double ii();
- static double jj();
- static double kk();
- static double ijk();
+ static double ii() { return -1; };
+ static double jj() { return -1; };
+ static double kk() { return -1; };
+ static double ijk() { return -1; };
 
- static quaternion ij();
- static quaternion jk();
- static quaternion ki();
+ static quaternion ij() { return k(); };
+ static quaternion jk() { return i(); };
+ static quaternion ki() { return j(); };
 
- static quaternion ji();
- static quaternion kj();
- static quaternion ik();
+ static quaternion ji() { return -k(); };
+ static quaternion kj() { return -i(); };
+ static quaternion ik() { return -j(); };
 
- friend quaternion operator+(const quaternion& a, const quaternion& b);
- friend quaternion operator-(const quaternion& a, const quaternion& b);
- friend quaternion operator*(const quaternion& a, const quaternion& b);
+ friend quaternion operator+(const quaternion& a, const quaternion& b) { return quaternion(a.w + b.w, a.x + b.x, a.y + b.y, a.z + b.z); };
+ friend quaternion operator-(const quaternion& a, const quaternion& b) { return quaternion(a.w - b.w, a.x - b.x, a.y - b.y, a.z - b.z); };
+ friend quaternion operator*(const quaternion& a, const quaternion& b) {
+   return quaternion( (a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z),
+                      (a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y),
+                      (a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z),
+                      (a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x)); };
 
- friend quaternion operator+(const quaternion& q, T k);
- friend quaternion operator+(T k, const quaternion& q);
-
-
- friend quaternion operator-(const quaternion& q, T k);
- friend quaternion operator-(T k, const quaternion& q);
-
- friend quaternion operator*(const quaternion& q, T k);
- friend quaternion operator*(T k, const quaternion& q);
- friend quaternion operator/(const quaternion& q, T k);
+ friend quaternion operator+(const quaternion& q, T k) { return quaternion(k, q.x + k, q.y + k, q.z); };
+ friend quaternion operator+(T k, const quaternion& q) { return q + k; };
 
 
- quaternion operator-() const;
+ friend quaternion operator-(const quaternion& q, T k) { return q + -k; };
+ friend quaternion operator-(T k, const quaternion& q) { return -(q - k); };
 
- friend bool operator==(const quaternion& q, const quaternion& r);
- friend bool operator!=(const quaternion& q, const quaternion& r);
- vector3d<T> vector() const;
+ friend quaternion operator*(const quaternion& q, T k) { return quaternion(k * q.w, k * q.x, k * q.y, k * q.z); };
+ friend quaternion operator*(T k, const quaternion& q) { return q * k; };
+ friend quaternion operator/(const quaternion& q, T k) { return q * (1.0 / k); };
+
+
+ quaternion operator-() const { return quaternion( -w, -x, -y, -z ); };
+
+ friend bool operator==(const quaternion& q, const quaternion& r) { return q.w == r.w && q.x == r.x && q.y == r.y && q.z == r.z; };
+ friend bool operator!=(const quaternion& q, const quaternion& r) { return !(q == r); };
+ vector3d<T> vector() const { return vector3d<T>("qVector", 3, {x, y, z, 0}); };
  T scalar() const;
 
  quaternion unit_scalar() const;
@@ -80,7 +84,7 @@ public:
  matrix3d<T> rot_matrix() const;
 
  // rotates point pt (pt.x, pt.y, pt.z) about (axis.x, axis.y, axis.z) by theta
- static vec3 rotate(const vector3D& pt, const vector3D& axis, double theta);
+ static vector3d<T> rotate(const vector3d<T>& pt, const vector3d<T>& axis, double theta);
 
  friend std::ostream& operator<<(std::ostream& os, const quaternion& q) {
    os << "Quat(";
@@ -214,4 +218,3 @@ void quaternion<T>::run_tests() {
 
 
 #endif /* quaternion_T_h */
-
