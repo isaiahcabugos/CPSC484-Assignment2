@@ -377,7 +377,6 @@ template <typename T> bool matrix3d<T>::operator==(const matrix3d<T>& b) const {
       error += abs((double)(a(i, j) - b(i, j)));
     }
   }
-  std::cout << "Error: " << error << std::endl;
   return error < epsilon;
 }
 template <typename T> bool matrix3d<T>::operator!=(const matrix3d<T>& b) const {
