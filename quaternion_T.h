@@ -64,27 +64,45 @@ public:
  friend bool operator==(const quaternion& q, const quaternion& r) { return q.w == r.w && q.x == r.x && q.y == r.y && q.z == r.z; };
  friend bool operator!=(const quaternion& q, const quaternion& r) { return !(q == r); };
  vector3d<T> vector() const { return vector3d<T>("qVector", 3, {x, y, z, 0}); };
- T scalar() const;
+ T scalar() const { return w; };
 
- quaternion unit_scalar() const;
+ quaternion unit_scalar() const { return quaternion(1.0, x, y, z); };
 
- quaternion conjugate() const;
+ quaternion conjugate() const { return quaternion(w, -x, -y, -z); };
 
- quaternion inverse() const;
+ quaternion inverse() const { return conjugate() / (magnitude() * magnitude()); };
 
- quaternion unit() const;
+ quaternion unit() const { return *this / magnitude(); };
 
- double norm() const;
- double magnitude() const;
+ double norm() const { return sqrt(w * w + x * x + y * y + z * z); };
+ double magnitude() const { return norm(); };
 
- double dot(const quaternion& v) const;
+ double dot(const quaternion& v) const { w * v.w + vector().dot(v.vector()); };
 
- double angle(const quaternion& v) const;
+ double angle(const quaternion& v) const {
+   quaternion z = conjugate() * v;
+   double zvnorm = z.vector().magnitude();
+   T zscalar = z.scalar();
+   double angle = atan2(zvnorm, zscalar);
+   return angle * 180.0 / M_PI;
+ };
 
- matrix3d<T> rot_matrix() const;
+ matrix3d<T> rot_matrix() const {
+   vector3d<T> a("a", 3, {  -2.0*(pow(y, 2) + pow(z, 2)) + 1,   2.0*(x*y + w*z),      2.0*(x*z - w*y)       });
+   vector3d<T> b("b", 3, {  2.0*(x*y - w*z),        -2.0*(pow(x, 2) + pow(z, 2)) + 1, 2.0*(y*z + w*x)       });
+   vector3d<T> c("c", 3, {  2.0*(x*z + w*y) ,        2.0*(y*z - w*x),      -2.0*(pow(x, 2) + pow(y, 2)) + 1  });
+   return matrix3d("qMatrix", 3, { a, b, c });
+ };
 
  // rotates point pt (pt.x, pt.y, pt.z) about (axis.x, axis.y, axis.z) by theta
- static vector3d<T> rotate(const vector3d<T>& pt, const vector3d<T>& axis, double theta);
+ static vector3d<T> rotate(const vector3d<T>& pt, const vector3d<T>& axis, double theta) {
+   double costheta2 = cos(theta / 2.0);
+   double sintheta2 = sin(theta / 2.0);
+   quaternion q = quaternion(costheta2, axis[0] * sintheta2, axis[1] * sintheta2, axis[2] * sintheta2);
+   quaternion p = quaternion(0, pt[0], pt[1], pt[2]);
+   quaternion p_rot = q * p * q.conjugate();
+   return vector3d(p_rot.x, p_rot.y, p_rot.z);
+ };
 
  friend std::ostream& operator<<(std::ostream& os, const quaternion& q) {
    os << "Quat(";
@@ -110,6 +128,8 @@ private:
 
 void plane_rotation(const std::string& msg, const quatD& plane, const std::initializer_list<double>& li) {
  matrix3dD rotate = matrix3dD("rot_matrix", 3, li);
+ std::cout << "Rotate Matrix:\n" << rotate << std::endl;
+ std::cout << "Plane_rot.matrix():\n" << plane.rot_matrix() << std::endl;
  assert(plane.rot_matrix() == rotate);
  std::cout << msg << " is: " << plane << plane.rot_matrix() << "\n";
 }
